@@ -4,6 +4,13 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Title>Gantry.NET</Title>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Description>Client library of https://github.com/Marcin99b/gantry</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.10" />
+  </ItemGroup>
 
 </Project>

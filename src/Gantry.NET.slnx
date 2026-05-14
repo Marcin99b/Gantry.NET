@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="Gantry.NET.Tests/Gantry.NET.Tests.csproj" Id="bb2230bd-5d8c-40b7-b279-5bbc52f75d12" />
   <Project Path="Gantry.NET/Gantry.NET.csproj" />
 </Solution>

@@ -31,15 +31,15 @@ internal class GantryClient(GantryOptions options) : IGantryClient
 
     private async Task<string> Send(string command)
     {
-        var uri = new Uri(options.ConnectionString);
+        var address = options.GetAddress();
         var data = Encoding.UTF8.GetBytes(command);
-        using var client = new TcpClient(uri.Host, uri.Port);
+        using var client = new TcpClient(address.Host, address.Port);
         using var stream = client.GetStream();
 
         await stream.WriteAsync(data, 0, data.Length);
 
-        var bytes = stream.Read(data, 0, data.Length);
-        var response = Encoding.UTF8.GetString(data, 0, bytes);
-        return response;
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        return Encoding.UTF8.GetString(ms.ToArray());
     }
 }

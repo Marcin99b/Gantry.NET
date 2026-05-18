@@ -1,79 +1,43 @@
 ﻿using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Gantry.NET;
 
 internal class GantryClient(GantryOptions options) : IGantryClient
 {
-    public async IAsyncEnumerable<string> Iterate(int fromOffset, [EnumeratorCancellation] CancellationToken ct)
-    {
-        while (!ct.IsCancellationRequested)
-        {
-            yield return await this.Get(fromOffset++, ct);
-        }
-    }
+    private static readonly IReadOnlyDictionary<CommandType, ReadOnlyMemory<byte>> commandTypeBytes = Enum.GetValues<CommandType>().ToDictionary(x => x, x => new ReadOnlyMemory<byte>([(byte)x]));
 
-    public Task Put(string message, CancellationToken ct)
-    {
-        var command = $"put {message}";
-        return this.Send(command, ct);
-    }
+    public async Task<bool> Ping(CancellationToken ct)
+        => (await this.Send(CommandType.Ping, ct)).SingleOrDefault() == 1;
 
-    public Task<string> Get(int offset, CancellationToken ct)
-    {
-        var command = $"get {offset}";
-        return this.Send(command, ct);
-    }
+    public Task Put(string message, CancellationToken ct) 
+        => this.Send(CommandType.PutMessage, Encoding.UTF8.GetBytes(message), ct);
 
-    public async Task<int> MaxOffset(CancellationToken ct)
-    {
-        var command = $"maxoffset";
-        var response = await this.Send(command, ct);
-        return int.Parse(response);
-    }
+    public async Task<string> GetAsString(int offset, CancellationToken ct)
+        => Encoding.UTF8.GetString(await this.Get(offset, ct));
 
-    private async Task<string> Send(string command, CancellationToken ct)
+    public Task<byte[]> Get(int offset, CancellationToken ct)
+        => this.Send(CommandType.GetMessage, BitConverter.GetBytes(offset), ct);
+
+    private async Task<byte[]> Send(CommandType commandType, ReadOnlyMemory<byte> data, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
         var address = options.GetAddress();
-        var data = Encoding.UTF8.GetBytes(command);
         using var client = new TcpClient(address.Host, address.Port);
         using var stream = client.GetStream();
 
-        await stream.WriteAsync(data, 0, data.Length);
-
+        await stream.WriteAsync(commandTypeBytes[commandType], ct);
+        if (data.Length > 0)
+        {
+            await stream.WriteAsync(data, ct);
+        }
+        
         using var ms = new MemoryStream();
         await stream.CopyToAsync(ms, ct);
-        var response = Encoding.UTF8.GetString(ms.ToArray());
-        
-        if (GantryError.TryParse(response, out var error))
-        {
-            //todo flow with GantryError
-            throw new Exception(response);
-        }
-
-        return response;
+        return ms.ToArray();
     }
-}
 
-public record GantryError(int Code, string Message)
-{
-    public static bool TryParse(string response, out GantryError? gantryError)
-    {
-        if (!response.StartsWith("ERROR: "))
-        {
-            gantryError = null;
-            return false;
-        }
-
-        response = response.Replace("ERROR: ", "");
-        var splitted = response.Split(";");
-        var code = int.Parse(splitted[0].Trim());
-        var message = splitted[1].Trim();
-
-        gantryError = new GantryError(code, message);
-        return true;
-    }
+    private Task<byte[]> Send(CommandType commandType, CancellationToken ct)
+        => this.Send(commandType, Array.Empty<byte>(), ct);
 }

@@ -1,11 +1,9 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Gantry.NET;
+﻿namespace Gantry.NET;
 
 public interface IGantryClient
 {
-    IAsyncEnumerable<string> Iterate(int fromOffset, CancellationToken ct);
+    Task<bool> Ping(CancellationToken ct);
     Task Put(string message, CancellationToken ct);
-    Task<string> Get(int offset, CancellationToken ct);
-    Task<int> MaxOffset(CancellationToken ct);
+    Task<string> GetAsString(int offset, CancellationToken ct);
+    Task<byte[]> Get(int offset, CancellationToken ct);
 }

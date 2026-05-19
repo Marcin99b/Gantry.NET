@@ -5,8 +5,6 @@ namespace Gantry.NET;
 
 internal class GantryClient(GantryOptions options) : IGantryClient
 {
-    private static readonly IReadOnlyDictionary<CommandType, ReadOnlyMemory<byte>> commandTypeBytes = Enum.GetValues<CommandType>().ToDictionary(x => x, x => new ReadOnlyMemory<byte>([(byte)x]));
-
     public async Task<bool> Ping(CancellationToken ct)
         => (await this.Send(CommandType.Ping, ct)).SingleOrDefault() == 1;
 
@@ -19,7 +17,7 @@ internal class GantryClient(GantryOptions options) : IGantryClient
     public Task<byte[]> Get(int offset, CancellationToken ct)
         => this.Send(CommandType.GetMessage, BitConverter.GetBytes(offset), ct);
 
-    private async Task<byte[]> Send(CommandType commandType, ReadOnlyMemory<byte> data, CancellationToken ct)
+    private async Task<byte[]> Send(CommandType commandType, byte[] data, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -27,11 +25,14 @@ internal class GantryClient(GantryOptions options) : IGantryClient
         using var client = new TcpClient(address.Host, address.Port);
         using var stream = client.GetStream();
 
-        await stream.WriteAsync(commandTypeBytes[commandType], ct);
-        if (data.Length > 0)
+        var bytes = new byte[data.Length + 1];
+        bytes[0] = (byte)commandType;
+        for (var i = 0; i < data.Length; i++)
         {
-            await stream.WriteAsync(data, ct);
+            bytes[i + 1] = data[i];
         }
+
+        await stream.WriteAsync(bytes, ct);
         
         using var ms = new MemoryStream();
         await stream.CopyToAsync(ms, ct);

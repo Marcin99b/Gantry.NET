@@ -1,4 +1,6 @@
-﻿namespace Gantry.NET.Tests;
+﻿using System.Security.Cryptography;
+
+namespace Gantry.NET.Tests;
 
 public class MessagesTests
 {
@@ -15,9 +17,23 @@ public class MessagesTests
     }
 
     [Test]
-    public async Task ShouldReturnAllInsertedMessages_OrderNotRequired()
+    public async Task ShouldReturnInsertedMessage_Long()
     {
-        var count = 10;
+        var message = RandomNumberGenerator.GetHexString(10_000);
+        var client = GantryClientTestFactory.Create();
+
+        await client.Put(message, CancellationToken.None);
+        var result = await client.GetAsString(0, CancellationToken.None);
+
+        Assert.That(result, Is.EqualTo(message));
+    }
+
+    [TestCase(10)]
+    [TestCase(100)]
+    [TestCase(1_000)]
+    [TestCase(10_000)]
+    public async Task ShouldReturnAllInsertedMessages_OrderNotRequired(int count)
+    {
         var messages = Enumerable.Range(0, count).Select(x => Guid.NewGuid().ToString()).ToArray();
         var client = GantryClientTestFactory.Create();
 
@@ -25,9 +41,6 @@ public class MessagesTests
 
         var results = await Task.WhenAll(Enumerable.Range(0, count).Select(x => client.GetAsString(x, CancellationToken.None)));
 
-        messages.Sort();
-        results.Sort();
-
-        Assert.That(results, Is.EquivalentTo(messages));
+        Assert.That(results.OrderBy(x => x), Is.EquivalentTo(messages.OrderBy(x => x)));
     }
 }

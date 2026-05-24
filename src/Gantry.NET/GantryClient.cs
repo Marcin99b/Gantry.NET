@@ -27,8 +27,6 @@ internal class GantryClient(GantryOptions options) : IGantryClient
 
         var address = options.GetAddress();
         using var client = new TcpClient(address.Host, address.Port);
-        client.ReceiveTimeout = 10_000;
-        client.SendTimeout = 10_000;
         using var stream = client.GetStream();
 
         stream.WriteByte((byte)commandType);

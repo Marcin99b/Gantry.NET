@@ -38,15 +38,10 @@ public class MessagesTests
         var messages = Enumerable.Range(0, count).Select(x => Guid.NewGuid().ToString()).ToArray();
         var client = GantryClientTestFactory.Create();
 
-        foreach (var message in messages)
-        {
-            await client.Put(message, CancellationToken.None);
-        }
+        await Task.WhenAll(messages.Select(x => client.Put(x, CancellationToken.None)));
 
-        for (var i = 0; i < count; i++)
-        {
-            var result = await client.GetAsString(i, CancellationToken.None);
-            Assert.That(result, Is.EqualTo(messages[i]));
-        }
+        var results = await Task.WhenAll(Enumerable.Range(0, count).Select(x => client.GetAsString(x, CancellationToken.None)));
+
+        Assert.That(results.OrderBy(x => x), Is.EquivalentTo(messages.OrderBy(x => x)));
     }
 }

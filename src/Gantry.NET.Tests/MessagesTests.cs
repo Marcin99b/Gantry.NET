@@ -28,6 +28,7 @@ public class MessagesTests
         Assert.That(result, Is.EqualTo(message));
     }
 
+    [TestCase(3)]
     [TestCase(10)]
     [TestCase(100)]
     [TestCase(1_000)]
@@ -37,10 +38,15 @@ public class MessagesTests
         var messages = Enumerable.Range(0, count).Select(x => Guid.NewGuid().ToString()).ToArray();
         var client = GantryClientTestFactory.Create();
 
-        await Task.WhenAll(messages.Select(x => client.Put(x, CancellationToken.None)));
+        foreach (var message in messages)
+        {
+            await client.Put(message, CancellationToken.None);
+        }
 
-        var results = await Task.WhenAll(Enumerable.Range(0, count).Select(x => client.GetAsString(x, CancellationToken.None)));
-
-        Assert.That(results.OrderBy(x => x), Is.EquivalentTo(messages.OrderBy(x => x)));
+        for (var i = 0; i < count; i++)
+        {
+            var result = await client.GetAsString(i, CancellationToken.None);
+            Assert.That(result, Is.EqualTo(messages[i]));
+        }
     }
 }

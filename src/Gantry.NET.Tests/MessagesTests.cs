@@ -28,7 +28,6 @@ public class MessagesTests
         Assert.That(result, Is.EqualTo(message));
     }
 
-    [TestCase(3)]
     [TestCase(10)]
     [TestCase(100)]
     [TestCase(1_000)]

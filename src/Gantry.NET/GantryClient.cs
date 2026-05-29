@@ -9,19 +9,19 @@ internal class GantryClient(GantryOptions options) : IGantryClient
     public async Task<bool> Ping(CancellationToken ct)
         => (await this.Send(CommandType.Ping, ct)).SingleOrDefault() == 1;
 
-    public Task Put(string message, CancellationToken ct) 
-        => this.Send(CommandType.PutMessage, Encoding.UTF8.GetBytes(message), ct);
+    public Task Put(string message, int topicId, CancellationToken ct) 
+        => this.Send(CommandType.PutMessage, topicId, Encoding.UTF8.GetBytes(message), ct);
 
-    public async Task<string> GetAsString(int offset, CancellationToken ct)
-        => Encoding.UTF8.GetString(await this.Get(offset, ct));
+    public async Task<string> GetAsString(int offset, int topicId, CancellationToken ct)
+        => Encoding.UTF8.GetString(await this.Get(offset, topicId, ct));
 
-    public Task<byte[]> Get(int offset, CancellationToken ct)
-        => this.Send(CommandType.GetMessage, BitConverter.GetBytes(offset), ct);
+    public Task<byte[]> Get(int offset, int topicId, CancellationToken ct)
+        => this.Send(CommandType.GetMessage, topicId, BitConverter.GetBytes(offset), ct);
 
     private Task<byte[]> Send(CommandType commandType, CancellationToken ct)
-        => this.Send(commandType, Array.Empty<byte>(), ct);
+        => this.Send(commandType, 0, Array.Empty<byte>(), ct);
 
-    private async Task<byte[]> Send(CommandType commandType, byte[] data, CancellationToken ct)
+    private async Task<byte[]> Send(CommandType commandType, int topicId, byte[] data, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
@@ -30,7 +30,15 @@ internal class GantryClient(GantryOptions options) : IGantryClient
         using var stream = client.GetStream();
 
         stream.WriteByte((byte)commandType);
-        await stream.WriteAsync(BitConverter.GetBytes(data.Length), ct);
+        var topic = topicId == 0 ? Array.Empty<byte>() : BitConverter.GetBytes(topicId);
+
+        await stream.WriteAsync(BitConverter.GetBytes(data.Length + topic.Length), ct);
+        
+        if (topic.Length > 0)
+        {
+            await stream.WriteAsync(topic, ct);
+        }
+
         if (data.Length > 0)
         {
             await stream.WriteAsync(data, ct);

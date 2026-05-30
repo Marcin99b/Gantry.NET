@@ -9,19 +9,19 @@ internal class GantryClient(GantryOptions options) : IGantryClient
     public async Task<bool> Ping(CancellationToken ct)
         => (await this.Send(CommandType.Ping, ct)).SingleOrDefault() == 1;
 
-    public Task Put(string message, int topicId, CancellationToken ct) 
+    public Task Put(uint topicId, string message, CancellationToken ct) 
         => this.Send(CommandType.PutMessage, topicId, Encoding.UTF8.GetBytes(message), ct);
 
-    public async Task<string> GetAsString(int offset, int topicId, CancellationToken ct)
-        => Encoding.UTF8.GetString(await this.Get(offset, topicId, ct));
+    public async Task<string> GetAsString(uint topicId, uint offset, CancellationToken ct)
+        => Encoding.UTF8.GetString(await this.Get(topicId, offset, ct));
 
-    public Task<byte[]> Get(int offset, int topicId, CancellationToken ct)
+    public Task<byte[]> Get(uint topicId, uint offset, CancellationToken ct)
         => this.Send(CommandType.GetMessage, topicId, BitConverter.GetBytes(offset), ct);
 
     private Task<byte[]> Send(CommandType commandType, CancellationToken ct)
         => this.Send(commandType, 0, Array.Empty<byte>(), ct);
 
-    private async Task<byte[]> Send(CommandType commandType, int topicId, byte[] data, CancellationToken ct)
+    private async Task<byte[]> Send(CommandType commandType, uint topicId, byte[] data, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 

@@ -3,7 +3,7 @@
 public interface IGantryClient
 {
     Task<bool> Ping(CancellationToken ct);
-    Task Put(string message, int topicId, CancellationToken ct);
-    Task<string> GetAsString(int offset, int topicId, CancellationToken ct);
-    Task<byte[]> Get(int offset, int topicId, CancellationToken ct);
+    Task Put(uint topicId, string message, CancellationToken ct);
+    Task<string> GetAsString(uint topicId, uint offset,  CancellationToken ct);
+    Task<byte[]> Get(uint topicId, uint offset, CancellationToken ct);
 }

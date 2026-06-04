@@ -9,7 +9,7 @@
     <Description>Client library of https://github.com/Marcin99b/gantry</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/Marcin99b/Gantry.NET</RepositoryUrl>
-	<Version>1.0.4</Version>
+	<Version>1.0.5</Version>
   </PropertyGroup>
 
   <ItemGroup>

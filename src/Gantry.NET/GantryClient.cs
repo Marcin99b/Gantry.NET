@@ -18,6 +18,14 @@ internal class GantryClient(GantryOptions options) : IGantryClient
     public Task<byte[]> Get(uint topicId, uint offset, CancellationToken ct)
         => this.Send(CommandType.GetMessage, topicId, BitConverter.GetBytes(offset), ct);
 
+    public async Task<uint> CreateTopic(string name, CancellationToken ct) 
+        => BitConverter.ToUInt32(await this.Send(CommandType.CreateTopic, Encoding.UTF8.GetBytes(name), ct));
+    public async Task DeleteTopic(string name, CancellationToken ct) 
+        => await this.Send(CommandType.DeleteTopic, Encoding.UTF8.GetBytes(name), ct);
+
+    private Task<byte[]> Send(CommandType commandType, byte[] data, CancellationToken ct)
+        => this.Send(commandType, 0, data, ct);
+
     private Task<byte[]> Send(CommandType commandType, CancellationToken ct)
         => this.Send(commandType, 0, Array.Empty<byte>(), ct);
 
